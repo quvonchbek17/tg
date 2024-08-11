@@ -5,14 +5,25 @@ export const savedMessageGetQueryDto = Joi.object().keys({
 });
 
 export const createSavedMessageDto = Joi.object().keys({
-    message: Joi.string().required(),
+    message: Joi.string().optional(),
+    file: Joi.object({
+      originalname: Joi.string().required(),
+      mimetype: Joi.string().required(),
+      buffer: Joi.binary().required(),
+    }).optional(),
 });
 
 export const updateSavedMessageDto = Joi.object().keys({
-    messageId: Joi.number().required(),
-    message: Joi.string().required(),
+    message_id: Joi.number(),
+    message: Joi.string().optional(),
+    file: Joi.object({
+      originalname: Joi.string().required(),
+      mimetype: Joi.string().required(),
+      buffer: Joi.binary().required(),
+    }).optional(),
 });
 
+
 export const deleteSavedMessageDto = Joi.object().keys({
-    messageId: Joi.number().required()
+  messageId: Joi.number().required(),
 });

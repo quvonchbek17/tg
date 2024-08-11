@@ -4,6 +4,7 @@ import { ErrorHandler } from "@errors";
 import { tgClient, tgApi } from "@config";
 
 export class Groups {
+
   static async GetGroups(
     req: Request,
     res: Response,
@@ -29,7 +30,7 @@ export class Groups {
         success: true,
         data: groups,
       });
-      
+
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }

@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { errorHandler } from "@middlewares";
 import { ErrorHandler } from "@errors";
 import { tgClient, tgApi } from "@config";
+const {CustomFile} = require("telegram/client/uploads");
+import * as fs from "fs"
+import path from "path";
 
 export class SavedMessages {
 
@@ -44,20 +47,58 @@ export class SavedMessages {
       await client.connect();
 
       const { message } = req.body;
+      const file = req.file as  Express.Multer.File | undefined;
+
+      if (!file) {
+        const result = await client.invoke(
+          new tgApi.messages.SendMessage({
+            peer: new tgApi.InputPeerSelf(),
+            message: message,
+            randomId: BigInt(-Math.floor(Math.random() * 1e18)),
+          })
+        );
+         res.status(200).json({
+          success: false,
+          message: "Message send succesfully",
+        });
+         return
+      }
+
+      // Faylni xotiraga yuklash
+      const filePath = path.join(process.cwd(), "uploads", file.fieldname);
+      const inputFile = await client.uploadFile({
+        file: new CustomFile(file.originalname, file.size, filePath), // Faylni xotiradan yuborish
+        workers: 1,
+      });
+
+      // Media obyektini yaratish
+      const mediaObject = new tgApi.InputMediaUploadedDocument({
+        file: inputFile,
+        mimeType: file.mimetype || 'application/octet-stream',
+        attributes: [
+          new tgApi.DocumentAttributeFilename({
+            fileName: file.originalname || 'untitled',
+          }),
+        ],
+      });
 
       const result = await client.invoke(
-        new tgApi.messages.SendMessage({
+        new tgApi.messages.SendMedia({
           peer: new tgApi.InputPeerSelf(),
+          media: mediaObject,
           message: message,
           randomId: BigInt(-Math.floor(Math.random() * 1e18)),
+          noforwards: true,
         })
       );
 
       res.status(200).json({
         success: true,
-        message: "Message sent successfully",
+        message: "Message with file sent successfully",
         data: result,
       });
+
+      fs.unlink(filePath, (err) => {})
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
@@ -73,21 +114,67 @@ export class SavedMessages {
       const client = tgClient(sessionString);
       await client.connect();
 
-      const { messageId, message } = req.body;
+      const { message, message_id } = req.body;
+      const file = req.file as Express.Multer.File | undefined;
+      let messageId = message_id*1
 
-      const result = await client.invoke(
-        new tgApi.messages.EditMessage({
-          peer: new tgApi.InputPeerSelf(),
-          id: messageId,
-          message: message,
-        })
-      );
+      // Xabarni yangilash
+      if (file) {
+        // Faylni xotiraga yuklash
+        const filePath = path.join(process.cwd(), "uploads", file.fieldname);
+        const inputFile = await client.uploadFile({
+          file: new CustomFile(file.originalname, file.size, filePath), // Faylni xotiradan yuborish
+          workers: 1,
+        });
 
-      res.status(200).json({
-        success: true,
-        message: "Message updated successfully",
-        data: result,
-      });
+        // Media obyektini yaratish
+        const mediaObject = new tgApi.InputMediaUploadedDocument({
+          file: inputFile,
+          mimeType: file.mimetype || 'application/octet-stream',
+          attributes: [
+            new tgApi.DocumentAttributeFilename({
+              fileName: file.originalname || 'untitled',
+            }),
+          ],
+        });
+
+        const result = await client.invoke(
+          new tgApi.messages.EditMessage({
+            peer: new tgApi.InputPeerSelf(),
+            id: messageId,
+            message: message || "",
+            media: mediaObject
+          })
+        );
+
+        res.status(200).json({
+          success: true,
+          message: "Message updated with file successfully",
+          data: result,
+        });
+
+        fs.unlink(filePath, (err) => {})
+      } else if (message) {
+        // Agar faqat matnni yangilash kerak bo'lsa
+        const result = await client.invoke(
+          new tgApi.messages.EditMessage({
+            peer: new tgApi.InputPeerSelf(),
+            id: messageId,
+            message: message,
+          })
+        );
+
+        res.status(200).json({
+          success: true,
+          message: "Message updated successfully",
+          data: result,
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: "No file or message provided",
+        });
+      }
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
