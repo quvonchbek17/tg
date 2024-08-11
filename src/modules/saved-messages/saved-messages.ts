@@ -104,6 +104,82 @@ export class SavedMessages {
     }
   }
 
+  static async CreateMultiSavedMessage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { message } = req.body;
+      const files = req.files as Express.Multer.File[] | undefined;
+
+      if (!files || files.length === 0) {
+        const result = await client.invoke(
+          new tgApi.messages.SendMessage({
+            peer: new tgApi.InputPeerSelf(),
+            message: message,
+            randomId: BigInt(-Math.floor(Math.random() * 1e18)),
+          })
+        );
+        res.status(200).json({
+          success: true,
+          message: "Message sent successfully",
+          data: result,
+        });
+        return;
+      }
+
+      const multiMedia = [];
+
+      for (const file of files) {
+        const filePath = path.join(process.cwd(), "uploads", file.fieldname);
+
+        const inputFile = await client.uploadFile({
+          file: new CustomFile(file.originalname, file.size, filePath),
+          workers: 1,
+        });
+
+        const mediaObject = new tgApi.InputSingleMedia({
+          media: new tgApi.InputMediaUploadedDocument({
+            file: inputFile,
+            mimeType: file.mimetype || "application/octet-stream",
+            attributes: [
+              new tgApi.DocumentAttributeFilename({
+                fileName: file.originalname || "untitled",
+              }),
+            ],
+          }),
+          randomId: BigInt(-Math.floor(Math.random() * 1e18)),
+          message: message || "",
+        });
+
+        multiMedia.push(mediaObject);
+
+        fs.unlinkSync(filePath); // Clean up the file after upload
+      }
+
+      const result = await client.invoke(
+        new tgApi.messages.SendMultiMedia({
+          peer: new tgApi.InputPeerSelf(),
+          multiMedia,
+          noforwards: true,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Message with multiple files sent successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
   static async UpdateSavedMessage(
     req: Request,
     res: Response,
