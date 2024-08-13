@@ -5,6 +5,7 @@ import { tgClient, tgApi } from "@config";
 import {CustomFile}  from "telegram/client/uploads"
 import { Api } from "telegram"
 import path from "path"
+import fs from "fs"
 
 export class Channels {
   static async GetChannels(
@@ -505,6 +506,7 @@ export class Channels {
         message: "Kanal rasmi almashtirildi",
         data: result.messages,
       });
+      fs.unlink(filePath, (err) => {})
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }

@@ -23,3 +23,26 @@ export const unBlockUserDto = Joi.object().keys({
   groupId: Joi.string().required(),
   userId: Joi.number().required()
 });
+
+export const getGroupInfoDto = Joi.object().keys({
+  groupId: Joi.string().required()
+});
+
+export const getGroupMembersDto = Joi.object().keys({
+  groupId: Joi.string().required()
+});
+
+export const pinMessageGroupDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  messageId: Joi.number().required()
+});
+
+export const getInviteLink = Joi.object().keys({
+  groupId: Joi.string().required()
+});
+
+export const getGroupMessagesDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  page: Joi.number().required(),
+  limit: Joi.number().required()
+});
