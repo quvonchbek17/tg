@@ -17,10 +17,10 @@ export class Groups {
 
       const dialogs = await client.getDialogs();
 
-      const groups = dialogs.filter((el: any) => el.isChannel).map((dialog:any) => ({
+      const groups = dialogs.filter((el: any) => el.isGroup).map((dialog:any) => ({
         id: dialog.id,
         name: dialog.title || dialog.name,
-        type: 'channel',
+        type: 'group',
         unreadCount: dialog.unreadCount,
         photo: dialog.entity?.photo,
         date: dialog.date
@@ -149,6 +149,32 @@ export class Groups {
         data: result,
       });
     } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async LeaveUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { groupId, userId } = req.body;
+
+      const result = await client.invoke(
+        new tgApi.messages.DeleteChatUser({
+          chatId: groupId,
+          userId,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Foydalanuvchi muvaffaqiyatli chatdan chiqarildi",
+        data: result,
+      });
+    } catch (error: any) {
+      console.log(error);
       next(new ErrorHandler(error.message, error.status));
     }
   }

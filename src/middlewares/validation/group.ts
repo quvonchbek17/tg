@@ -13,3 +13,13 @@ export const updateGroupDto = Joi.object().keys({
 export const deleteGroupDto = Joi.object().keys({
     id: Joi.string().required()
 });
+
+export const blockUserDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  userId: Joi.number().required()
+});
+
+export const unBlockUserDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  userId: Joi.number().required()
+});

@@ -14,3 +14,46 @@ export const updateChannelDto = Joi.object().keys({
 export const deleteChannelDto = Joi.object().keys({
     channelId: Joi.string().required()
 });
+
+export const getBlockedChannelUsersDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    page: Joi.number(),
+    limit: Joi.number()
+});
+
+export const getChannelUsersDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    page: Joi.number(),
+    limit: Joi.number()
+});
+
+export const getChannelMessagesDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    page: Joi.number(),
+    limit: Joi.number()
+});
+
+
+export const addUserChannelDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    userIds: Joi.array().items(Joi.number().integer().min(1)).required()
+});
+
+export const blockChannelUserDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    userId: Joi.number().required()
+});
+
+export const checkUsernameDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    username: Joi.string().required()
+});
+
+export const updateChannelPhotoDto = Joi.object().keys({
+    channelId: Joi.string().optional(),
+    file: Joi.object({
+      originalname: Joi.string().required(),
+      mimetype: Joi.string().required(),
+      buffer: Joi.binary().required(),
+    }).optional(),
+});

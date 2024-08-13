@@ -144,23 +144,24 @@ export class SavedMessages {
         });
 
         const mediaObject = new tgApi.InputSingleMedia({
-          media: new tgApi.InputMediaUploadedDocument({
-            file: inputFile,
-            mimeType: file.mimetype || "application/octet-stream",
-            attributes: [
-              new tgApi.DocumentAttributeFilename({
-                fileName: file.originalname || "untitled",
+          media: await client.invoke(
+            new tgApi.messages.UploadMedia({
+              peer: new tgApi.InputPeerSelf(),
+              media: new tgApi.InputMediaUploadedPhoto({
+                file: inputFile,
+                  workers: 1,
+                }),
               }),
-            ],
-          }),
+          ),
           randomId: BigInt(-Math.floor(Math.random() * 1e18)),
           message: message || "",
         });
 
         multiMedia.push(mediaObject);
 
-        fs.unlinkSync(filePath); // Clean up the file after upload
+        fs.unlinkSync(filePath);
       }
+
 
       const result = await client.invoke(
         new tgApi.messages.SendMultiMedia({
