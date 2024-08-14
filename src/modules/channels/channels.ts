@@ -8,6 +8,31 @@ import path from "path"
 import fs from "fs"
 
 export class Channels {
+
+  static async checkChannelType(client: any, groupId: string) {
+    let chat
+      try {
+        chat = await client.invoke(
+          new tgApi.messages.GetChats({
+            id: [groupId]
+          })
+        );
+      } catch (error) {
+        chat = await client.getEntity("-"+groupId)
+      }
+
+    if (chat.chats?.length === 0 && chat.chats) {
+      throw new ErrorHandler("Kanal topilmadi", 404);
+    }
+
+    const channel = chat.chats ? chat.chats[0]: chat;
+    if (channel.className !== "Channel" || channel.megagroup === true) {
+      throw new ErrorHandler("Bu id kanalga tegishli emas", 400);
+    }
+
+    return channel;
+  }
+
   static async GetChannels(
     req: Request,
     res: Response,
@@ -470,7 +495,8 @@ export class Channels {
       const { channelId } = req.body;
       const file = req.file as  Express.Multer.File | undefined;
 
-      const channel = await client.getEntity("-" + channelId);
+      const channel = await Channels.checkChannelType(client, channelId);
+
 
       if (channel.className !== "Channel") {
         res.status(400).json({
