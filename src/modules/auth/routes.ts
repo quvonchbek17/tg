@@ -7,5 +7,6 @@ const AuthRouter = Router()
 AuthRouter
     .post("/sendcode", validate(sendCodeDto), Auth.SendCode)
     .post("/verifycode", validate(verifyCodeDto), Auth.VerifyCode)
+    // .post("/verifypassword", Auth.VerifyPassword)
 
 export  {AuthRouter}
