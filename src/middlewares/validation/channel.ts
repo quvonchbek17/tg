@@ -57,3 +57,12 @@ export const updateChannelPhotoDto = Joi.object().keys({
       buffer: Joi.binary().required(),
     }).optional(),
 });
+
+export const deleteChannelHistoryDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    forEveryone: Joi.boolean().required()
+});
+
+export const getChannelInfoDto = Joi.object().keys({
+    channelId: Joi.string().required()
+});

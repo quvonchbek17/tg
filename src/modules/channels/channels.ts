@@ -356,6 +356,36 @@ export class Channels {
     }
   }
 
+  static async GetChannelInfo(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId } = req.query;
+
+      await Channels.checkChannelType(client, String(channelId));
+
+      const result = await client.invoke(
+        new Api.channels.GetFullChannel({
+          channel: String(channelId)
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Kanal ma'lumotlari olindi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
   static async CheckUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
@@ -481,7 +511,6 @@ export class Channels {
     }
   }
 
-
   static async UpdateChannelPhoto(
     req: Request,
     res: Response,
@@ -533,6 +562,39 @@ export class Channels {
         data: result.messages,
       });
       fs.unlink(filePath, (err) => {})
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+   // Delete History
+   static async DeleteHistory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId, forEveryone } = req.body;
+
+      let channel = await Channels.checkChannelType(client, channelId);
+      let result;
+
+      result = await client.invoke(
+        new Api.channels.DeleteHistory({
+          channel,
+          forEveryone: forEveryone,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Tarix tozalandi",
+        data: result,
+      });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { validate, createChannelDto, updateChannelDto, deleteChannelDto, blockChannelUserDto, addUserChannelDto, getBlockedChannelUsersDto, getChannelUsersDto, checkUsernameDto, getChannelMessagesDto, updateChannelPhotoDto } from "@middlewares"
+import { validate, createChannelDto, updateChannelDto, deleteChannelDto, blockChannelUserDto, addUserChannelDto, getBlockedChannelUsersDto, getChannelUsersDto, checkUsernameDto, getChannelMessagesDto, updateChannelPhotoDto, deleteChannelHistoryDto, getChannelInfoDto } from "@middlewares"
 import { Channels } from "./channels"
 import { upload } from "@config";
 
@@ -13,12 +13,14 @@ ChannelRouter
 
     .get("/users", validate(getChannelUsersDto, "query"), Channels.GetUsers)
     .get("/messages", validate(getChannelMessagesDto, "query"), Channels.GetChannelMessages)
+    .get("/info", validate(getChannelInfoDto, "query"), Channels.GetChannelMessages)
     .get("/blocked-users", validate(getBlockedChannelUsersDto, "query"), Channels.GetBlockedUsers)
     .post("/add-user", validate(addUserChannelDto), Channels.AddUserToChannel)
     .post("/check-username", validate(checkUsernameDto), Channels.CheckUsername)
     .put("/update/photo", validate(updateChannelPhotoDto), upload.single("file"),Channels.UpdateChannelPhoto)
     .post("/block-user", validate(blockChannelUserDto), Channels.BlockUser)
     .put("/update/username", validate(checkUsernameDto), Channels.UpdateUsername)
+    .delete("/delete-history", validate(deleteChannelHistoryDto), Channels.DeleteHistory)
 
 
 export  {ChannelRouter}
