@@ -1,8 +1,8 @@
 import Joi from "joi";
 
 export const createGroupDto = Joi.object().keys({
-    title: Joi.string().required(),
-    userIds: Joi.array().items(Joi.number().integer().min(1)).required()
+  title: Joi.string().required(),
+  userIds: Joi.array().items(Joi.number().integer().min(1)).required(),
 });
 
 export const updateGroupDto = Joi.object().keys({
@@ -11,64 +11,64 @@ export const updateGroupDto = Joi.object().keys({
 });
 
 export const deleteGroupDto = Joi.object().keys({
-    id: Joi.string().required()
+  id: Joi.string().required(),
 });
 
 export const blockUserDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  userId: Joi.number().required()
+  userId: Joi.number().required(),
 });
 
 export const unBlockUserDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  userId: Joi.number().required()
+  userId: Joi.number().required(),
 });
 
 export const getGroupInfoDto = Joi.object().keys({
-  groupId: Joi.string().required()
+  groupId: Joi.string().required(),
 });
 
 export const getGroupMembersDto = Joi.object().keys({
-  groupId: Joi.string().required()
+  groupId: Joi.string().required(),
 });
 
 export const pinMessageGroupDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  messageId: Joi.number().required()
+  messageId: Joi.number().required(),
 });
 
 export const getGroupInviteLink = Joi.object().keys({
-  groupId: Joi.string().required()
+  groupId: Joi.string().required(),
 });
 
 export const getGroupMessagesDto = Joi.object().keys({
   groupId: Joi.string().required(),
   page: Joi.number().required(),
-  limit: Joi.number().required()
+  limit: Joi.number().required(),
 });
 
 export const checkGroupInviteLinkDto = Joi.object().keys({
-  link: Joi.string().required()
+  link: Joi.string().required(),
 });
 
 export const deleteGroupHistoryDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  forEveryone: Joi.boolean().required()
+  forEveryone: Joi.boolean().required(),
 });
 
 export const deleteGroupMessagesDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  messageIds: Joi.array().items(Joi.number().required()).required()
+  messageIds: Joi.array().items(Joi.number().required()).required(),
 });
 
 export const deleteMemberMessagesDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  userId: Joi.number().required()
+  userId: Joi.number().required(),
 });
 
 export const updateGroupAboutDto = Joi.object().keys({
   groupId: Joi.string().required(),
-  userId: Joi.number().required()
+  userId: Joi.number().required(),
 });
 
 export const updateGroupPhotoDto = Joi.object().keys({
@@ -77,5 +77,25 @@ export const updateGroupPhotoDto = Joi.object().keys({
     originalname: Joi.string().required(),
     mimetype: Joi.string().required(),
     buffer: Joi.binary().required(),
+  }).optional(),
+});
+
+export const updateGroupAdminDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  userId: Joi.number().required(),
+  isAdmin: Joi.boolean().optional(),
+  adminRights: Joi.object({
+    changeInfo: Joi.boolean().required(),
+    postMessages: Joi.boolean().required(),
+    editMessages: Joi.boolean().required(),
+    deleteMessages: Joi.boolean().required(),
+    banUsers: Joi.boolean().required(),
+    inviteUsers: Joi.boolean().required(),
+    pinMessages: Joi.boolean().required(),
+    addAdmins: Joi.boolean().required(),
+    anonymous: Joi.boolean().required(),
+    manageCall: Joi.boolean().required(),
+    other: Joi.boolean().required(),
+    adminName: Joi.string().required(),
   }).optional(),
 });

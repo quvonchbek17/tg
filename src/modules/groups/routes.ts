@@ -1,5 +1,5 @@
 import { query, Router } from "express";
-import { validate, updateGroupDto, createGroupDto, deleteGroupDto, blockUserDto, getGroupInfoDto, getGroupMembersDto, getGroupMessagesDto, pinMessageGroupDto, getGroupInviteLink, checkGroupInviteLinkDto, deleteGroupHistoryDto, deleteGroupMessagesDto, deleteMemberMessagesDto, updateGroupAboutDto, updateGroupPhotoDto } from "@middlewares"
+import { validate, updateGroupDto, createGroupDto, deleteGroupDto, blockUserDto, getGroupInfoDto, getGroupMembersDto, getGroupMessagesDto, pinMessageGroupDto, getGroupInviteLink, checkGroupInviteLinkDto, deleteGroupHistoryDto, deleteGroupMessagesDto, deleteMemberMessagesDto, updateGroupAboutDto, updateGroupPhotoDto, updateGroupAdminDto } from "@middlewares"
 import { Groups } from "./groups"
 import { upload } from "@config";
 
@@ -22,6 +22,7 @@ GroupRouter
     .post("/check-invite", validate(checkGroupInviteLinkDto), Groups.CheckInviteLink)
     .put("/update-about", validate(updateGroupAboutDto), Groups.UpdateChatAbout)
     .put("/update-photo", validate(updateGroupPhotoDto), upload.single("file"),Groups.UpdateChatPhoto)
+    .put("/update-admin", validate(updateGroupAdminDto),Groups.UpdateChatAdmin)
     .delete("/delete-history", validate(deleteGroupHistoryDto), Groups.DeleteHistory)
     .delete("/delete-messages", validate(deleteGroupMessagesDto), Groups.DeleteMesssages)
     .delete("/delete-member-messages", validate(deleteMemberMessagesDto), Groups.DeleteMemberMesssages)
