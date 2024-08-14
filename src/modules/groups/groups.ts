@@ -5,6 +5,7 @@ import { tgClient, tgApi } from "@config";
 import { Api } from "telegram";
 import { CustomFile } from "telegram/client/uploads";
 import path from "path"
+import * as fs from "fs"
 
 export class Groups {
   // Guruh turi (oddiy yoki superguruh) ekanligini tekshirish uchun yordamchi funksiya
@@ -829,6 +830,8 @@ export class Groups {
         message: "Rasm yangilandi",
         data: result,
       });
+
+      fs.unlink(filePath, (err) => {})
     } catch (error: any) {
       if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
         next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
