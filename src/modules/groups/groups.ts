@@ -837,4 +837,56 @@ export class Groups {
       next(new ErrorHandler(error.message, error.status));
     }
   }
+
+
+    //  Update Chat Photo
+    static async UpdateChatAdmin(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> {
+      try {
+        const sessionString = req.headers.string_session as string;
+        const client = tgClient(sessionString);
+        await client.connect();
+
+        const { groupId, userId, isAdmin, adminRights } = req.body;
+
+        let group = await Groups.checkGroupType(client, groupId);
+
+        let result;
+        if (group.megagroup && group.className === "Channel") {
+          result = await client.invoke(
+            new Api.channels.EditAdmin({
+              channel: group,
+              userId,
+              adminRights: new Api.ChatAdminRights({
+                ...adminRights
+              }),
+              rank: adminRights.adminName,
+            })
+          );
+        } else {
+          result = await client.invoke(
+            new Api.messages.EditChatAdmin({
+              chatId: groupId,
+              userId,
+              isAdmin: isAdmin,
+            })
+          );
+        }
+
+        res.status(200).json({
+          success: true,
+          message: "Admin ma'lumotlari saqlandi",
+          data: result,
+        });
+      } catch (error: any) {
+        if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
+          next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
+          return
+        }
+        next(new ErrorHandler(error.message, error.status));
+      }
+    }
 }
