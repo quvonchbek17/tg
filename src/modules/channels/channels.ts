@@ -20,7 +20,7 @@ export class Channels {
 
       const dialogs = await client.getDialogs();
       const channels = dialogs
-        .filter((el: any) => el.isChannel)
+        .filter((el: any) => el.isChannel && !el.isGroup)
         .map((dialog: any) => ({
           id: dialog.id,
           name: dialog.title || dialog.name,
