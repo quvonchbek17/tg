@@ -78,5 +78,38 @@ export const exportMessageLinkChannelDto = Joi.object().keys({
 });
 
 export const joinChannelDto = Joi.object().keys({
+    username: Joi.string().required()
+});
+
+export const markAsReadChannelMessagesDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    messageIds: Joi.array().items(Joi.number().required()).required()
+});
+
+export const leaveChannelDto = Joi.object().keys({
     channelId: Joi.string().required()
 });
+
+export const deleteChannelMessagesDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    messageIds: Joi.array().items(Joi.number().required()).required()
+});
+
+export const updateChannelAdminDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    userId: Joi.number().required(),
+    adminRights: Joi.object({
+      changeInfo: Joi.boolean().required(),
+      postMessages: Joi.boolean().required(),
+      editMessages: Joi.boolean().required(),
+      deleteMessages: Joi.boolean().required(),
+      banUsers: Joi.boolean().required(),
+      inviteUsers: Joi.boolean().required(),
+      pinMessages: Joi.boolean().required(),
+      addAdmins: Joi.boolean().required(),
+      anonymous: Joi.boolean().required(),
+      manageCall: Joi.boolean().required(),
+      other: Joi.boolean().required(),
+      adminName: Joi.string().required(),
+    }).optional(),
+  });

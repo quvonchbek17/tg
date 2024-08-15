@@ -10,16 +10,16 @@ import { Groups } from "../groups";
 
 export class Channels {
 
-  static async checkChannelType(client: any, groupId: string) {
+  static async checkChannelType(client: any, channelId: string) {
     let chat
       try {
         chat = await client.invoke(
           new tgApi.messages.GetChats({
-            id: [groupId]
+            id: [channelId]
           })
         );
       } catch (error) {
-        chat = await client.getEntity("-"+groupId)
+        chat = await client.getEntity("-"+channelId)
       }
 
     if (chat.chats?.length === 0 && chat.chats) {
@@ -171,14 +171,7 @@ export class Channels {
       const { channelId } = req.body;
 
       // Kanalni olish
-      let channel;
-      try {
-        channel = await client.getEntity(channelId);
-      } catch (error) {
-        throw new Error(
-          "Could not find the channel. Please check the channelId."
-        );
-      }
+      let channel = await Channels.checkChannelType(client, channelId)
 
       const result = await client.invoke(
         new tgApi.channels.DeleteChannel({
@@ -589,8 +582,7 @@ export class Channels {
     }
   }
 
-
-   static async DeleteHistory(
+  static async DeleteHistory(
     req: Request,
     res: Response,
     next: NextFunction
@@ -614,6 +606,37 @@ export class Channels {
       res.status(200).json({
         success: true,
         message: "Tarix tozalandi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async DeleteMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId, messageIds } = req.body;
+
+      let channel = await Channels.checkChannelType(client, channelId);
+
+      const result = await client.invoke(
+        new Api.channels.DeleteMessages({
+          channel: channel,
+          id: messageIds,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Xabarlar o'chirildi",
         data: result,
       });
     } catch (error: any) {
@@ -717,19 +740,117 @@ export class Channels {
       const client = tgClient(sessionString);
       await client.connect();
 
-      let { channelId } = req.query
-
-      let channel = await Channels.checkChannelType(client, String(channelId))
+      let { username } = req.body
 
       const result = await client.invoke(
         new Api.channels.JoinChannel({
-          channel: channel,
+          channel: username,
         })
       );
 
       res.status(200).json({
         success: true,
         message: "Kanalga qo'shildingiz",
+        data: result
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async LeaveChannel(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId } = req.body
+
+      let channel = await Channels.checkChannelType(client, channelId)
+
+      const result = await client.invoke(
+        new Api.channels.LeaveChannel({
+          channel
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Kanaldan chiqarildingiz",
+        data: result
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async UpdateChannelAdmin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId, userId, adminRights } = req.body;
+
+      let channel = await Channels.checkChannelType(client, channelId);
+
+      let result = await client.invoke(
+        new Api.channels.EditAdmin({
+          channel,
+          userId,
+          adminRights: new Api.ChatAdminRights({
+            ...adminRights
+          }),
+          rank: adminRights.adminName,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Admin ma'lumotlari saqlandi",
+        data: result,
+      });
+    } catch (error: any) {
+      if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
+        next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
+        return
+      }
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async MarkAsReadChannelMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId, messageIds } = req.body
+
+      let channel = await Channels.checkChannelType(client, channelId)
+
+      const result = await client.invoke(
+        new Api.channels.ReadMessageContents({
+          channel: channel,
+          id: messageIds,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Xabarlar o'qilgan deb belgilandi",
         data: result
       });
     } catch (error: any) {

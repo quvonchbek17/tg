@@ -759,10 +759,6 @@ export class Groups {
         data: result,
       });
     } catch (error: any) {
-      if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
-        next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
-        return
-      }
       next(new ErrorHandler(error.message, error.status));
     }
   }
@@ -833,10 +829,6 @@ export class Groups {
 
       fs.unlink(filePath, (err) => {})
     } catch (error: any) {
-      if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
-        next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
-        return
-      }
       next(new ErrorHandler(error.message, error.status));
     }
   }
@@ -884,10 +876,6 @@ export class Groups {
           data: result,
         });
       } catch (error: any) {
-        if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
-          next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
-          return
-        }
         next(new ErrorHandler(error.message, error.status));
       }
     }
