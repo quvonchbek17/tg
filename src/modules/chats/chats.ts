@@ -16,7 +16,7 @@ export class Chats {
       await client.connect();
 
       const dialogs = await client.getDialogs();
-      const chats = dialogs.filter((el:any) => el.isUser && !el.entity?.bot && el.entity?.mutualContact).map((dialog:any) => ({
+      const chats = dialogs.filter((el:any) => el.isUser && !el.entity?.bot ).map((dialog:any) => ({
         id: dialog.id,
         name: dialog.title || dialog.name,
         unreadCount: dialog.unreadCount,
