@@ -66,3 +66,17 @@ export const deleteChannelHistoryDto = Joi.object().keys({
 export const getChannelInfoDto = Joi.object().keys({
     channelId: Joi.string().required()
 });
+
+export const setChannelDiscussionGroupDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    groupId: Joi.string().required()
+});
+
+export const exportMessageLinkChannelDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    messageId: Joi.number().required()
+});
+
+export const joinChannelDto = Joi.object().keys({
+    channelId: Joi.string().required()
+});

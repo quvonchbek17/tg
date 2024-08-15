@@ -6,6 +6,7 @@ import {CustomFile}  from "telegram/client/uploads"
 import { Api } from "telegram"
 import path from "path"
 import fs from "fs"
+import { Groups } from "../groups";
 
 export class Channels {
 
@@ -501,10 +502,31 @@ export class Channels {
         })
       );
 
+      const channelFull = await client.invoke(new Api.channels.GetFullChannel({
+        channel: channel.id
+      }));
+
+
+      let messagedWithDiscussion = []
+      channelFull.linkedChatId?.value
+
+      if(channelFull.fullChat?.linkedChatId){
+        const discussionChat = await Groups.checkGroupType(client,  channelFull.fullChat.linkedChatId?.value);
+
+        for(let message of result.messages){
+          const discussionMessages = await client.getMessages(discussionChat, { reply_to_msg_id: message.id });
+
+          messagedWithDiscussion.push({
+            ...message,
+            discussionMessages
+          })
+        }
+
+      }
       res.status(200).json({
         success: true,
         message: "Kanal xabarlari olindi",
-        data: result.messages,
+        data: channelFull.fullChat?.linkedChatId ? messagedWithDiscussion : result.messages,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
@@ -567,7 +589,7 @@ export class Channels {
     }
   }
 
-   // Delete History
+
    static async DeleteHistory(
     req: Request,
     res: Response,
@@ -581,9 +603,8 @@ export class Channels {
       const { channelId, forEveryone } = req.body;
 
       let channel = await Channels.checkChannelType(client, channelId);
-      let result;
 
-      result = await client.invoke(
+      let result  = await client.invoke(
         new Api.channels.DeleteHistory({
           channel,
           forEveryone: forEveryone,
@@ -594,6 +615,122 @@ export class Channels {
         success: true,
         message: "Tarix tozalandi",
         data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetGroupsForDiscussion(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(
+        new Api.channels.GetGroupsForDiscussion()
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Muhokama uchun mavjud guruhlar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async SetDiscussionGroup(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId, groupId } = req.body
+
+      let channel = await Channels.checkChannelType(client, channelId)
+      let group = await Groups.checkGroupType(client, groupId)
+      const result = await client.invoke(
+        new Api.channels.SetDiscussionGroup({
+          broadcast: channel,
+          group: group,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Kanal muhokama guruhi biriktirildi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetMessageLink(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId, messageId } = req.query
+
+      let channel = await Channels.checkChannelType(client, String(channelId))
+
+      const result = await client.invoke(
+        new Api.channels.ExportMessageLink({
+          channel: channel,
+          id: Number(messageId)
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Xabar linki",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async JoinChannel(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId } = req.query
+
+      let channel = await Channels.checkChannelType(client, String(channelId))
+
+      const result = await client.invoke(
+        new Api.channels.JoinChannel({
+          channel: channel,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Kanalga qo'shildingiz",
+        data: result
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
