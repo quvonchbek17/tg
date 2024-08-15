@@ -58,7 +58,7 @@ export class SavedMessages {
           })
         );
          res.status(200).json({
-          success: false,
+          success: true,
           message: "Message send succesfully",
         });
          return
@@ -70,18 +70,32 @@ export class SavedMessages {
         file: new CustomFile(file.originalname, file.size, filePath), // Faylni xotiradan yuborish
         workers: 1,
       });
-
+      let mediaObject;
+      if (!req.query.type || req.query.type == "photo") {
+        mediaObject = new tgApi.InputMediaUploadedPhoto({
+          file: inputFile,
+          mimeType: file.mimetype || 'application/octet-stream',
+          attributes: [
+            new tgApi.DocumentAttributeFilename({
+              fileName: file.originalname || 'untitled',
+            }),
+          ],
+        });
+      }
       // Media obyektini yaratish
-      const mediaObject = new tgApi.InputMediaUploadedDocument({
-        file: inputFile,
-        mimeType: file.mimetype || 'application/octet-stream',
-        attributes: [
-          new tgApi.DocumentAttributeFilename({
-            fileName: file.originalname || 'untitled',
-          }),
-        ],
-      });
+     else if (req.query.type == "document") {
+       mediaObject = new tgApi.InputMediaUploadedDocument({
+         file: inputFile,
+         mimeType: file.mimetype || 'application/octet-stream',
+         attributes: [
+           new tgApi.DocumentAttributeFilename({
+             fileName: file.originalname || 'untitled',
+           }),
+         ],
+       });
+     }
 
+      console.log({mediaObject})
       const result = await client.invoke(
         new tgApi.messages.SendMedia({
           peer: new tgApi.InputPeerSelf(),
