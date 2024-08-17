@@ -20,6 +20,8 @@ import {
   leaveChannelDto,
   deleteChannelMessagesDto,
   updateChannelAdminDto,
+  getAdminLogDto,
+  getChannelSponsoredMessagesDto
 } from "@middlewares";
 import { Channels } from "./channels";
 import { upload } from "@config";
@@ -29,6 +31,8 @@ const ChannelRouter = Router();
 /////// GET ///////////
 ChannelRouter.get("/all", Channels.GetChannels)
   .get("/users", validate(getChannelUsersDto, "query"), Channels.GetUsers)
+  .get("/user", validate(getChannelUsersDto, "query"), Channels.GetChannelUserInfo)
+  .get("/sponsored-messages", validate(getChannelSponsoredMessagesDto, "query"), Channels.GetSponsoredMessages)
   .get(
     "/messages",
     validate(getChannelMessagesDto, "query"),
@@ -40,9 +44,23 @@ ChannelRouter.get("/all", Channels.GetChannels)
     Channels.GetChannelMessages
   )
   .get(
+    "/inactives",
+    Channels.GetInActiveChannels
+  )
+
+  .get(
+    "/admined-public-channels",
+    Channels.GetAdminedPublicChannels
+  )
+  .get(
     "/blocked-users",
     validate(getBlockedChannelUsersDto, "query"),
     Channels.GetBlockedUsers
+  )
+  .get(
+    "/admin-log",
+    validate(getAdminLogDto, "query"),
+    Channels.GetAdminLog
   )
   .get("/groups-for-discussion", Channels.GetGroupsForDiscussion)
   .get(
@@ -56,6 +74,7 @@ ChannelRouter.get("/all", Channels.GetChannels)
   .post("/block-user", validate(blockChannelUserDto), Channels.BlockUser)
   .post("/add-user", validate(addUserChannelDto), Channels.AddUserToChannel)
   .post("/check-username", validate(checkUsernameDto), Channels.CheckUsername)
+  .post("/read-message-contents", validate(markAsReadChannelMessagesDto), Channels.ReadMessageContents)
   .post("/join", validate(joinChannelDto), Channels.JoinChannel)
   .post(
     "/set-discussion-group",

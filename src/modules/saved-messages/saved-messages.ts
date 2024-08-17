@@ -5,6 +5,7 @@ import { tgClient, tgApi } from "@config";
 const {CustomFile} = require("telegram/client/uploads");
 import * as fs from "fs"
 import path from "path";
+import { Messages } from "../messages";
 
 export class SavedMessages {
 
@@ -46,73 +47,7 @@ export class SavedMessages {
       const client = tgClient(sessionString);
       await client.connect();
 
-      const { message } = req.body;
-      const file = req.file as  Express.Multer.File | undefined;
-
-      if (!file) {
-        const result = await client.invoke(
-          new tgApi.messages.SendMessage({
-            peer: new tgApi.InputPeerSelf(),
-            message: message,
-            randomId: BigInt(-Math.floor(Math.random() * 1e18)),
-          })
-        );
-         res.status(200).json({
-          success: true,
-          message: "Message send succesfully",
-        });
-         return
-      }
-
-      // Faylni xotiraga yuklash
-      const filePath = path.join(process.cwd(), "uploads", file.fieldname);
-      const inputFile = await client.uploadFile({
-        file: new CustomFile(file.originalname, file.size, filePath), // Faylni xotiradan yuborish
-        workers: 1,
-      });
-      let mediaObject;
-      if (!req.query.type || req.query.type == "photo") {
-        mediaObject = new tgApi.InputMediaUploadedPhoto({
-          file: inputFile,
-          mimeType: file.mimetype || 'application/octet-stream',
-          attributes: [
-            new tgApi.DocumentAttributeFilename({
-              fileName: file.originalname || 'untitled',
-            }),
-          ],
-        });
-      }
-      // Media obyektini yaratish
-     else if (req.query.type == "document") {
-       mediaObject = new tgApi.InputMediaUploadedDocument({
-         file: inputFile,
-         mimeType: file.mimetype || 'application/octet-stream',
-         attributes: [
-           new tgApi.DocumentAttributeFilename({
-             fileName: file.originalname || 'untitled',
-           }),
-         ],
-       });
-     }
-
-      console.log({mediaObject})
-      const result = await client.invoke(
-        new tgApi.messages.SendMedia({
-          peer: new tgApi.InputPeerSelf(),
-          media: mediaObject,
-          message: message,
-          randomId: BigInt(-Math.floor(Math.random() * 1e18)),
-          noforwards: true,
-        })
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Message with file sent successfully",
-        data: result,
-      });
-
-      fs.unlink(filePath, (err) => {})
+      await Messages.SendDinamicMessage(req, res, next, null, null, true)
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
@@ -158,15 +93,9 @@ export class SavedMessages {
         });
 
         const mediaObject = new tgApi.InputSingleMedia({
-          media: await client.invoke(
-            new tgApi.messages.UploadMedia({
-              peer: new tgApi.InputPeerSelf(),
-              media: new tgApi.InputMediaUploadedPhoto({
-                file: inputFile,
-                  workers: 1,
-                }),
-              }),
-          ),
+          media: new tgApi.InputMediaUploadedPhoto({
+            file: inputFile,
+          }),
           randomId: BigInt(-Math.floor(Math.random() * 1e18)),
           message: message || "",
         });
@@ -175,7 +104,6 @@ export class SavedMessages {
 
         fs.unlinkSync(filePath);
       }
-
 
       const result = await client.invoke(
         new tgApi.messages.SendMultiMedia({
@@ -190,8 +118,8 @@ export class SavedMessages {
         message: "Message with multiple files sent successfully",
         data: result,
       });
-    } catch (error: any) {
-      next(new ErrorHandler(error.message, error.status));
+    } catch (error) {
+      next(error);
     }
   }
 

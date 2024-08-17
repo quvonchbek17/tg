@@ -1,2 +1,11 @@
--Contacts
-   - add contactda phone bilan ishlamadi
+Channels
+  GetLeftChannels
+  GetSendAs - super guruh uchun
+  channels.ReportSpam - super guruh uchun
+  channels.SetStickers - super guruh uchun
+  ToggleJoinRequest- docsda yetarlicha tarif berilmagan
+  channels.ToggleSlowMode - super guruh uchun
+
+
+Groups
+  DeleteExportedChatInvite - 400: INVITE_REVOKED_MISSING xatolik

@@ -6,7 +6,8 @@ const MessageRouter = Router()
 
 MessageRouter
     .get("/all", validate(getMessagesQueryDto, "query"), Messages.GetMessages)
-    .post("/send", validate(sendMessageDto), Messages.SendMessage)
+    // .post("/send", validate(sendMessageDto), Messages.SendMessage)
+    .post("/forward-messages", Messages.ForwardMessages)
     .put("/edit", validate(editMessageDto), Messages.EditMessage)
     .delete("/delete", validate(deleteMessageDto), Messages.DeleteMessage)
 

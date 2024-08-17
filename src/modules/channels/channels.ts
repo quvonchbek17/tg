@@ -2,31 +2,31 @@ import { Request, Response, NextFunction } from "express";
 import { errorHandler } from "@middlewares";
 import { ErrorHandler } from "@errors";
 import { tgClient, tgApi } from "@config";
-import {CustomFile}  from "telegram/client/uploads"
-import { Api } from "telegram"
-import path from "path"
-import fs from "fs"
+import { CustomFile } from "telegram/client/uploads";
+import { Api } from "telegram";
+import path from "path";
+import fs from "fs";
 import { Groups } from "../groups";
+import bigInt from "big-integer";
 
 export class Channels {
-
   static async checkChannelType(client: any, channelId: string) {
-    let chat
-      try {
-        chat = await client.invoke(
-          new tgApi.messages.GetChats({
-            id: [channelId]
-          })
-        );
-      } catch (error) {
-        chat = await client.getEntity("-"+channelId)
-      }
+    let chat;
+    try {
+      chat = await client.invoke(
+        new tgApi.messages.GetChats({
+          id: [channelId],
+        })
+      );
+    } catch (error) {
+      chat = await client.getEntity("-" + channelId);
+    }
 
     if (chat.chats?.length === 0 && chat.chats) {
       throw new ErrorHandler("Kanal topilmadi", 404);
     }
 
-    const channel = chat.chats ? chat.chats[0]: chat;
+    const channel = chat.chats ? chat.chats[0] : chat;
     if (channel.className !== "Channel" || channel.megagroup === true) {
       throw new ErrorHandler("Bu id kanalga tegishli emas", 400);
     }
@@ -171,7 +171,7 @@ export class Channels {
       const { channelId } = req.body;
 
       // Kanalni olish
-      let channel = await Channels.checkChannelType(client, channelId)
+      let channel = await Channels.checkChannelType(client, channelId);
 
       const result = await client.invoke(
         new tgApi.channels.DeleteChannel({
@@ -189,7 +189,11 @@ export class Channels {
     }
   }
 
-  static async AddUserToChannel(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async AddUserToChannel(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
       const client = tgClient(sessionString);
@@ -197,8 +201,7 @@ export class Channels {
 
       const { channelId, userIds } = req.body;
 
-      const channel = await client.getEntity("-"+channelId);
-
+      const channel = await client.getEntity("-" + channelId);
 
       //Kanal turini tekshirish
       if (channel.className === "Channel") {
@@ -225,8 +228,11 @@ export class Channels {
     }
   }
 
-
-  static async BlockUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async BlockUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
       const client = tgClient(sessionString);
@@ -235,9 +241,9 @@ export class Channels {
       const { channelId, userId } = req.body;
 
       // Get the InputChannel object for the group (channel)
-      const channel = await client.getEntity("-"+channelId);
+      const channel = await client.getEntity("-" + channelId);
 
-      if(channel.className === "Channel"){
+      if (channel.className === "Channel") {
         const result = await client.invoke(
           new tgApi.channels.EditBanned({
             channel: channel, // Passing the correct InputChannel object
@@ -275,25 +281,29 @@ export class Channels {
     }
   }
 
-  static async GetBlockedUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async GetBlockedUsers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
       const client = tgClient(sessionString);
       await client.connect();
 
       const { channelId, page, limit } = req.query;
-      const channel = await client.getEntity("-"+channelId);
+      const channel = await client.getEntity("-" + channelId);
 
-      if(channel.className === "Channel"){
-        let customPage = Number(page) ? Number(page) : 1
-        let customLimit = Number(limit) ? Number(limit) : 100
+      if (channel.className === "Channel") {
+        let customPage = Number(page) ? Number(page) : 1;
+        let customLimit = Number(limit) ? Number(limit) : 100;
 
         const result = await client.invoke(
           new Api.channels.GetParticipants({
             channel,
-            filter: new Api.ChannelParticipantsBanned({q:""}),
-            offset: (customPage-1) * customLimit,
-            limit: customLimit
+            filter: new Api.ChannelParticipantsBanned({ q: "" }),
+            offset: (customPage - 1) * customLimit,
+            limit: customLimit,
           })
         );
         res.status(200).json({
@@ -312,24 +322,27 @@ export class Channels {
     }
   }
 
-  static async GetUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async GetUsers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
       const client = tgClient(sessionString);
       await client.connect();
 
       const { channelId, page, limit } = req.query;
-      const channel = await client.getEntity("-"+channelId);
+      const channel = await Channels.checkChannelType(client, String(channelId));
 
-      if(channel.className === "Channel"){
-        let customPage = Number(page) ? Number(page) : 1
-        let customLimit = Number(limit) ? Number(limit) : 100
+      let customPage = Number(page) ? Number(page) : 1;
+        let customLimit = Number(limit) ? Number(limit) : 100;
 
         const result = await client.invoke(
           new tgApi.channels.GetParticipants({
             channel,
             filter: new tgApi.ChannelParticipantsRecent(),
-            offset: (customPage-1)*customLimit,
+            offset: (customPage - 1) * customLimit,
             limit: customLimit,
             hash: BigInt(-Math.floor(Math.random() * 1e18)),
           })
@@ -339,12 +352,35 @@ export class Channels {
           message: "Kanal a'zolari",
           data: result.users,
         });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: "Bu kanal emas",
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetChannelUserInfo(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId, userId } = req.query;
+
+      const channel = await Channels.checkChannelType(client, String(channelId));
+      const result = await client.invoke(
+        new Api.channels.GetParticipant({
+          channel: channel,
+          participant: String(userId),
+        })
+      );
+        res.status(200).json({
+          success: true,
+          message: "Kanal a'zosi haqida ma'lumot",
+          data: result.participant,
         });
-      }
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
@@ -366,7 +402,7 @@ export class Channels {
 
       const result = await client.invoke(
         new Api.channels.GetFullChannel({
-          channel: String(channelId)
+          channel: String(channelId),
         })
       );
 
@@ -380,16 +416,20 @@ export class Channels {
     }
   }
 
-  static async CheckUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async CheckUsername(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
       const client = tgClient(sessionString);
       await client.connect();
 
       const { channelId, username } = req.body;
-      const channel = await client.getEntity("-"+channelId);
+      const channel = await client.getEntity("-" + channelId);
 
-      if(channel.className === "Channel"){
+      if (channel.className === "Channel") {
         const result = await client.invoke(
           new Api.channels.CheckUsername({
             channel: channel,
@@ -397,10 +437,10 @@ export class Channels {
           })
         );
 
-        res.status(result ? 200: 409).json({
+        res.status(result ? 200 : 409).json({
           success: result,
-          message: result ? "username bo'sh": "allaqachon foydalanilgan",
-          isAvailable: result
+          message: result ? "username bo'sh" : "allaqachon foydalanilgan",
+          isAvailable: result,
         });
       } else {
         res.status(400).json({
@@ -413,16 +453,20 @@ export class Channels {
     }
   }
 
-  static async UpdateUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async UpdateUsername(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const sessionString = req.headers.string_session as string;
       const client = tgClient(sessionString);
       await client.connect();
 
       const { channelId, username } = req.body;
-      const channel = await client.getEntity("-"+channelId);
+      const channel = await client.getEntity("-" + channelId);
 
-      if(channel.className === "Channel"){
+      if (channel.className === "Channel") {
         const result = await client.invoke(
           new Api.channels.CheckUsername({
             channel,
@@ -430,27 +474,25 @@ export class Channels {
           })
         );
 
-        if(result){
+        if (result) {
           const result = await client.invoke(
             new tgApi.channels.UpdateUsername({
               channel,
               username,
             })
-          )
+          );
 
           res.status(200).json({
             success: true,
             message: "username almashtirildi",
             data: result,
           });
-
         } else {
           res.status(409).json({
             success: false,
-            message: "bu username band"
+            message: "bu username band",
           });
         }
-
       } else {
         res.status(400).json({
           success: false,
@@ -481,7 +523,7 @@ export class Channels {
           success: false,
           message: "Bu kanal emas",
         });
-        return
+        return;
       }
 
       const customOffset = Number(offset) || 0;
@@ -491,35 +533,42 @@ export class Channels {
         new tgApi.messages.GetHistory({
           peer: channel,
           offsetId: customOffset,
-          limit: customLimit
+          limit: customLimit,
         })
       );
 
-      const channelFull = await client.invoke(new Api.channels.GetFullChannel({
-        channel: channel.id
-      }));
+      const channelFull = await client.invoke(
+        new Api.channels.GetFullChannel({
+          channel: channel.id,
+        })
+      );
 
+      let messagedWithDiscussion = [];
+      channelFull.linkedChatId?.value;
 
-      let messagedWithDiscussion = []
-      channelFull.linkedChatId?.value
+      if (channelFull.fullChat?.linkedChatId) {
+        const discussionChat = await Groups.checkGroupType(
+          client,
+          channelFull.fullChat.linkedChatId?.value
+        );
 
-      if(channelFull.fullChat?.linkedChatId){
-        const discussionChat = await Groups.checkGroupType(client,  channelFull.fullChat.linkedChatId?.value);
-
-        for(let message of result.messages){
-          const discussionMessages = await client.getMessages(discussionChat, { reply_to_msg_id: message.id });
+        for (let message of result.messages) {
+          const discussionMessages = await client.getMessages(discussionChat, {
+            reply_to_msg_id: message.id,
+          });
 
           messagedWithDiscussion.push({
             ...message,
-            discussionMessages
-          })
+            discussionMessages,
+          });
         }
-
       }
       res.status(200).json({
         success: true,
         message: "Kanal xabarlari olindi",
-        data: channelFull.fullChat?.linkedChatId ? messagedWithDiscussion : result.messages,
+        data: channelFull.fullChat?.linkedChatId
+          ? messagedWithDiscussion
+          : result.messages,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
@@ -537,17 +586,16 @@ export class Channels {
       await client.connect();
 
       const { channelId } = req.body;
-      const file = req.file as  Express.Multer.File | undefined;
+      const file = req.file as Express.Multer.File | undefined;
 
       const channel = await Channels.checkChannelType(client, channelId);
-
 
       if (channel.className !== "Channel") {
         res.status(400).json({
           success: false,
           message: "Bu kanal emas",
         });
-        return
+        return;
       }
 
       if (!file) {
@@ -555,7 +603,7 @@ export class Channels {
           success: false,
           message: "File mavjud emas",
         });
-        return
+        return;
       }
 
       const filePath = path.join(process.cwd(), "uploads", file.fieldname);
@@ -567,7 +615,7 @@ export class Channels {
       const result = await client.invoke(
         new Api.channels.EditPhoto({
           channel,
-          photo: inputFile
+          photo: inputFile,
         })
       );
 
@@ -576,7 +624,7 @@ export class Channels {
         message: "Kanal rasmi almashtirildi",
         data: result.messages,
       });
-      fs.unlink(filePath, (err) => {})
+      fs.unlink(filePath, (err) => {});
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
@@ -596,7 +644,7 @@ export class Channels {
 
       let channel = await Channels.checkChannelType(client, channelId);
 
-      let result  = await client.invoke(
+      let result = await client.invoke(
         new Api.channels.DeleteHistory({
           channel,
           forEveryone: forEveryone,
@@ -678,10 +726,10 @@ export class Channels {
       const client = tgClient(sessionString);
       await client.connect();
 
-      let { channelId, groupId } = req.body
+      let { channelId, groupId } = req.body;
 
-      let channel = await Channels.checkChannelType(client, channelId)
-      let group = await Groups.checkGroupType(client, groupId)
+      let channel = await Channels.checkChannelType(client, channelId);
+      let group = await Groups.checkGroupType(client, groupId);
       const result = await client.invoke(
         new Api.channels.SetDiscussionGroup({
           broadcast: channel,
@@ -709,14 +757,14 @@ export class Channels {
       const client = tgClient(sessionString);
       await client.connect();
 
-      let { channelId, messageId } = req.query
+      let { channelId, messageId } = req.query;
 
-      let channel = await Channels.checkChannelType(client, String(channelId))
+      let channel = await Channels.checkChannelType(client, String(channelId));
 
       const result = await client.invoke(
         new Api.channels.ExportMessageLink({
           channel: channel,
-          id: Number(messageId)
+          id: Number(messageId),
         })
       );
 
@@ -740,7 +788,7 @@ export class Channels {
       const client = tgClient(sessionString);
       await client.connect();
 
-      let { username } = req.body
+      let { username } = req.body;
 
       const result = await client.invoke(
         new Api.channels.JoinChannel({
@@ -751,7 +799,7 @@ export class Channels {
       res.status(200).json({
         success: true,
         message: "Kanalga qo'shildingiz",
-        data: result
+        data: result,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
@@ -768,20 +816,20 @@ export class Channels {
       const client = tgClient(sessionString);
       await client.connect();
 
-      let { channelId } = req.body
+      let { channelId } = req.body;
 
-      let channel = await Channels.checkChannelType(client, channelId)
+      let channel = await Channels.checkChannelType(client, channelId);
 
       const result = await client.invoke(
         new Api.channels.LeaveChannel({
-          channel
+          channel,
         })
       );
 
       res.status(200).json({
         success: true,
         message: "Kanaldan chiqarildingiz",
-        data: result
+        data: result,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
@@ -807,7 +855,7 @@ export class Channels {
           channel,
           userId,
           adminRights: new Api.ChatAdminRights({
-            ...adminRights
+            ...adminRights,
           }),
           rank: adminRights.adminName,
         })
@@ -819,9 +867,14 @@ export class Channels {
         data: result,
       });
     } catch (error: any) {
-      if(error.message.includes("CHAT_ABOUT_NOT_MODIFIED")){
-        next(new ErrorHandler("About eski ma'lumot bilan bir xil. O'zgartiring", 403));
-        return
+      if (error.message.includes("CHAT_ABOUT_NOT_MODIFIED")) {
+        next(
+          new ErrorHandler(
+            "About eski ma'lumot bilan bir xil. O'zgartiring",
+            403
+          )
+        );
+        return;
       }
       next(new ErrorHandler(error.message, error.status));
     }
@@ -837,9 +890,9 @@ export class Channels {
       const client = tgClient(sessionString);
       await client.connect();
 
-      let { channelId, messageIds } = req.body
+      let { channelId, messageIds } = req.body;
 
-      let channel = await Channels.checkChannelType(client, channelId)
+      let channel = await Channels.checkChannelType(client, channelId);
 
       const result = await client.invoke(
         new Api.channels.ReadMessageContents({
@@ -851,7 +904,169 @@ export class Channels {
       res.status(200).json({
         success: true,
         message: "Xabarlar o'qilgan deb belgilandi",
-        data: result
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetAdminLog(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId, limit } = req.query;
+
+      let channel = await Channels.checkChannelType(client, String(channelId));
+
+      const result = await client.invoke(
+        new Api.channels.GetAdminLog({
+          channel,
+          q: "",
+          limit: Number(limit),
+          eventsFilter: new Api.ChannelAdminLogEventsFilter({
+            join: true,
+            leave: true,
+            invite: true,
+            ban: true,
+            unban: true,
+            kick: true,
+            unkick: true,
+            promote: true,
+            demote: true,
+            info: true,
+            settings: true,
+            pinned: true,
+            groupCall: true,
+            invites: true,
+            send: true,
+          }),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Admin loglari olindi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetInActiveChannels(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(
+        new Api.channels.GetInactiveChannels()
+      );
+
+      let channels = result.chats?.filter(
+        (el: any) => !el.megagroup && !el.gigagroup
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Faol bo'lmagan kanallar",
+        data: channels,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetAdminedPublicChannels(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(
+        new Api.channels.GetAdminedPublicChannels({})
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Siz admin bo'lgan kanallar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetSponsoredMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId } = req.query
+
+      let channel = await Channels.checkChannelType(client, String(channelId))
+
+      const result = await client.invoke(
+        new Api.channels.GetSponsoredMessages({
+          channel
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Sponsor xabarlari",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async ReadMessageContents(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { channelId, messageIds } = req.body
+
+      let channel = await Channels.checkChannelType(client, String(channelId))
+
+      const result = await client.invoke(
+        new Api.channels.ReadMessageContents({
+          channel: channel,
+          id: messageIds,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "O'qilgan deb belgilandi",
+        data: result,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));

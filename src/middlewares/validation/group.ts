@@ -19,6 +19,17 @@ export const blockUserDto = Joi.object().keys({
   userId: Joi.number().required(),
 });
 
+export const sendMessageToGroupDto = Joi.object().keys({
+  groupId: Joi.string().optional(),
+  scheduleDate: Joi.number().optional(),
+  message: Joi.number().optional(),
+  file: Joi.object({
+    originalname: Joi.string().required(),
+    mimetype: Joi.string().required(),
+    buffer: Joi.binary().required(),
+  }).optional(),
+});
+
 export const unBlockUserDto = Joi.object().keys({
   groupId: Joi.string().required(),
   userId: Joi.number().required(),
@@ -32,6 +43,31 @@ export const getGroupMembersDto = Joi.object().keys({
   groupId: Joi.string().required(),
 });
 
+export const getScheduledMessagesDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+});
+
+export const getScheduledHistoryDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+});
+
+export const getChatInviteImportersDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  offset: Joi.number().required(),
+  limit: Joi.number().required(),
+  requested: Joi.boolean().required(),
+  link: Joi.string().required(),
+});
+
+export const getAdminWithInvitesDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+});
+
+export const getArchiveStickersDto = Joi.object().keys({
+  offsetId: Joi.string().required(),
+  limit: Joi.number().required()
+});
+
 export const pinMessageGroupDto = Joi.object().keys({
   groupId: Joi.string().required(),
   messageId: Joi.number().required(),
@@ -39,6 +75,9 @@ export const pinMessageGroupDto = Joi.object().keys({
 
 export const getGroupInviteLink = Joi.object().keys({
   groupId: Joi.string().required(),
+  requestNeeded: Joi.boolean().required(),
+  expireDate: Joi.number().optional(),
+  title: Joi.string().optional(),
 });
 
 export const getGroupMessagesDto = Joi.object().keys({
@@ -98,4 +137,38 @@ export const updateGroupAdminDto = Joi.object().keys({
     other: Joi.boolean().required(),
     adminName: Joi.string().required(),
   }).optional(),
+});
+
+export const deleteExportedChatInviteDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  link: Joi.string().required(),
+});
+
+export const deleteScheduledMessagesDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  messageIds: Joi.array().items(Joi.number().optional()).required(),
+});
+
+export const editChatDefaultBannedRights = Joi.object().keys({
+  groupId: Joi.string().required(),
+  bannedRights: Joi.object({
+    untilDate: Joi.number().optional(),
+    sendMedia: Joi.boolean().required(),
+    sendStickers: Joi.boolean().required(),
+    sendGifs: Joi.boolean().required(),
+    sendGames: Joi.boolean().required(),
+    sendInline: Joi.boolean().required(),
+    sendPolls: Joi.boolean().required(),
+    changeInfo: Joi.boolean().required(),
+    inviteUsers: Joi.boolean().required(),
+    pinMessages: Joi.boolean().required(),
+  }).required(),
+});
+
+export const editExportedChatInviteDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  link: Joi.string().required(),
+  expireDate: Joi.number().optional(),
+  requestNeeded: Joi.boolean().optional(),
+  title: Joi.string().optional(),
 });

@@ -67,6 +67,15 @@ export const getChannelInfoDto = Joi.object().keys({
     channelId: Joi.string().required()
 });
 
+export const getChannelSponsoredMessagesDto = Joi.object().keys({
+    channelId: Joi.string().required()
+});
+export const getcChannelUser = Joi.object().keys({
+    channelId: Joi.string().required(),
+    userId: Joi.string().required()
+});
+
+
 export const setChannelDiscussionGroupDto = Joi.object().keys({
     channelId: Joi.string().required(),
     groupId: Joi.string().required()
@@ -113,3 +122,8 @@ export const updateChannelAdminDto = Joi.object().keys({
       adminName: Joi.string().required(),
     }).optional(),
   });
+
+export const getAdminLogDto = Joi.object().keys({
+    channelId: Joi.string().required(),
+    limit: Joi.number().required()
+});
