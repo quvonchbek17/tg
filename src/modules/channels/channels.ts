@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import { Groups } from "../groups";
 import bigInt from "big-integer";
+import { Messages } from "../messages";
 
 export class Channels {
   static async checkChannelType(client: any, channelId: string) {
@@ -1067,6 +1068,135 @@ export class Channels {
         success: true,
         message: "O'qilgan deb belgilandi",
         data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetChannelPollResults(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId, pollId } = req.query;
+      let peer = await Messages.getPeer(client, channelId);
+
+      // Poll natijalarini olish
+      const result = await client.invoke(
+        new Api.messages.GetPollResults({
+          peer,
+          msgId: Number(pollId),
+        })
+      );
+
+      res.json({
+        success: true,
+        message: "So'rovnoma natijalari",
+        data: result,
+      });
+    } catch (error: any) {
+      console.log(error);
+
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async SendPollToChannel(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const {
+        channelId,
+        question,
+        options,
+        multipleChoice = false,
+        isQuiz = false,
+        correctOptionId = null
+      } = req.body;
+      let peer = await Messages.getPeer(client, channelId);
+
+      // PollAnswer arrayini tayyorlaymiz
+      const answers = options.map((option: string, index: number) => new Api.PollAnswer({
+        text: new Api.TextWithEntities({ text: option, entities: [] }),
+        option: Buffer.from(index.toString()),
+      }));
+
+      // `question`ni TextWithEntities formatiga o'tkazish
+      const formattedQuestion = new Api.TextWithEntities({
+        text: question,
+        entities: [],
+      });
+
+      // Send poll using SendMedia
+      const result = await client.invoke(
+        new Api.messages.SendMedia({
+          peer,
+          media: new Api.InputMediaPoll({
+            poll: new Api.Poll({
+              id: bigInt(Date.now()),
+              question: formattedQuestion,
+              answers: answers,
+              publicVoters: false,
+              multipleChoice: multipleChoice,
+              quiz: isQuiz,
+            }),
+            correctAnswers: isQuiz && correctOptionId !== null ? [Buffer.from(correctOptionId.toString())] : [],
+          }),
+          message: question,
+        })
+      );
+
+      res.json({
+        success: true,
+        poll: result,
+      });
+    } catch (error: any) {
+      console.log(error);
+
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async VoteInPoll(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { channelId, pollId, optionIndexes } = req.body;
+      let peer = await Messages.getPeer(client, channelId);
+
+      // Ovoz berish uchun PollAnswerVoter arrayini tayyorlaymiz
+      const votes = optionIndexes.map((index: number) => Buffer.from(index.toString()));
+
+      // Ovoz berish uchun invoke qilamiz
+      const result = await client.invoke(
+        new Api.messages.SendVote({
+          peer,
+          msgId: Number(pollId),
+          options: votes,
+        })
+      );
+
+      res.json({
+        success: true,
+        vote: result,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));

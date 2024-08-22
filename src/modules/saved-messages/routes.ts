@@ -10,8 +10,7 @@ const SavedMessagesRouter = Router()
 SavedMessagesRouter
     .get("/all", validate(savedMessageGetQueryDto, "query"), SavedMessages.GetSavedMessages)
     .post("/create", validate(createSavedMessageDto), upload.single("file"), SavedMessages.CreateSavedMessage)
-    .post("/create/multi", validate(createMultiSavedMessageDto), upload.array("files"), SavedMessages.CreateMultiSavedMessage)
-    .put("/edit", validate(updateSavedMessageDto), upload.single("file"), SavedMessages.UpdateSavedMessage)
+    .put("/edit", validate(updateSavedMessageDto), upload.single("file"), SavedMessages.EditSavedMessage)
     .delete("/delete", validate(deleteSavedMessageDto), SavedMessages.DeleteSavedMessage)
 
 

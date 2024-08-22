@@ -21,7 +21,10 @@ import {
   deleteChannelMessagesDto,
   updateChannelAdminDto,
   getAdminLogDto,
-  getChannelSponsoredMessagesDto
+  getChannelSponsoredMessagesDto,
+  getChannelPollResults,
+  sendPollToChannel,
+  voiteInPollChannelDto
 } from "@middlewares";
 import { Channels } from "./channels";
 import { upload } from "@config";
@@ -33,6 +36,7 @@ ChannelRouter.get("/all", Channels.GetChannels)
   .get("/users", validate(getChannelUsersDto, "query"), Channels.GetUsers)
   .get("/user", validate(getChannelUsersDto, "query"), Channels.GetChannelUserInfo)
   .get("/sponsored-messages", validate(getChannelSponsoredMessagesDto, "query"), Channels.GetSponsoredMessages)
+  .get("/poll-results", validate(getChannelPollResults, "query"), Channels.GetChannelPollResults)
   .get(
     "/messages",
     validate(getChannelMessagesDto, "query"),
@@ -41,7 +45,7 @@ ChannelRouter.get("/all", Channels.GetChannels)
   .get(
     "/info",
     validate(getChannelInfoDto, "query"),
-    Channels.GetChannelMessages
+    Channels.GetChannelInfo
   )
   .get(
     "/inactives",
@@ -76,6 +80,8 @@ ChannelRouter.get("/all", Channels.GetChannels)
   .post("/check-username", validate(checkUsernameDto), Channels.CheckUsername)
   .post("/read-message-contents", validate(markAsReadChannelMessagesDto), Channels.ReadMessageContents)
   .post("/join", validate(joinChannelDto), Channels.JoinChannel)
+  .post("/send-poll", validate(sendPollToChannel), Channels.SendPollToChannel)
+  .post("/voite-poll", validate(voiteInPollChannelDto), Channels.VoteInPoll)
   .post(
     "/set-discussion-group",
     validate(setChannelDiscussionGroupDto),

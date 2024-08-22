@@ -99,7 +99,6 @@ export class Auth {
           },
           {
             onError: async function(p1: Error) {
-              console.log("error", p1);
               // true = stop the authentication process
               return true;
             },

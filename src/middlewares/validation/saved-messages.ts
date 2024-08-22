@@ -13,6 +13,7 @@ export const createSavedMessageDto = Joi.object().keys({
     }).optional(),
 });
 
+
 export const createMultiSavedMessageDto = Joi.object().keys({
     message: Joi.string().optional(),
     files: Joi.array().items(
@@ -26,8 +27,9 @@ export const createMultiSavedMessageDto = Joi.object().keys({
 
 
 export const updateSavedMessageDto = Joi.object().keys({
-    message_id: Joi.number(),
-    message: Joi.string().optional(),
+    messageId: Joi.number().optional(),
+    newMessage: Joi.string().optional(),
+    scheduleDate: Joi.number().optional(),
     file: Joi.object({
       originalname: Joi.string().required(),
       mimetype: Joi.string().required(),

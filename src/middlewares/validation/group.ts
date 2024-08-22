@@ -63,6 +63,15 @@ export const getAdminWithInvitesDto = Joi.object().keys({
   groupId: Joi.string().required(),
 });
 
+export const createForumTopicDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  title: Joi.string().required(),
+});
+
+export const setTypingDto = Joi.object().keys({
+  chatId: Joi.string().required()
+});
+
 export const getArchiveStickersDto = Joi.object().keys({
   offsetId: Joi.string().required(),
   limit: Joi.number().required()
@@ -86,6 +95,14 @@ export const getGroupMessagesDto = Joi.object().keys({
   limit: Joi.number().required(),
 });
 
+export const getGroupOnlines = Joi.object().keys({
+  groupId: Joi.string().required()
+});
+
+export const getForumTopics = Joi.object().keys({
+  groupId: Joi.string().required()
+});
+
 export const checkGroupInviteLinkDto = Joi.object().keys({
   link: Joi.string().required(),
 });
@@ -94,6 +111,12 @@ export const deleteGroupHistoryDto = Joi.object().keys({
   groupId: Joi.string().required(),
   forEveryone: Joi.boolean().required(),
 });
+
+export const deleteForumTopicDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  topicId: Joi.number().required()
+});
+
 
 export const deleteGroupMessagesDto = Joi.object().keys({
   groupId: Joi.string().required(),
@@ -172,3 +195,33 @@ export const editExportedChatInviteDto = Joi.object().keys({
   requestNeeded: Joi.boolean().optional(),
   title: Joi.string().optional(),
 });
+
+export const updateNotificationSettingsGroupDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  mute: Joi.boolean().required(),
+  muteUntil: Joi.number().optional(),
+  showPreviews: Joi.boolean().required()
+});
+
+export const getGroupPollResultsDto = Joi.object().keys({
+  chatId: Joi.string().required(),
+  pollId: Joi.string().required()
+});
+
+export const sendPollToGroupDto = Joi.object().keys({
+  chatId: Joi.string().required(),
+  question: Joi.string().required(),
+  options: Joi.array().items(Joi.string().required()).required(),
+  isAnonymous: Joi.boolean().required(),
+  multipleChoice: Joi.boolean().required(),
+  isQuiz: Joi.boolean().required(),
+  correctOptionId: Joi.number().optional(),
+});
+
+export const voiteInPollDto = Joi.object().keys({
+  chatId: Joi.string().required(),
+  pollId: Joi.number().required(),
+  optionIndexes: Joi.array().items(Joi.number().required()).required()
+});
+
+

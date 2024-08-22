@@ -4,8 +4,8 @@ import { ErrorHandler } from "@errors";
 import { tgClient, tgApi } from "@config";
 import { Api } from "telegram";
 import { CustomFile } from "telegram/client/uploads";
-import path from "path"
-import * as fs from "fs"
+import path from "path";
+import * as fs from "fs";
 import bigInt from "big-integer";
 import { Messages } from "../messages";
 
@@ -38,28 +38,29 @@ export class Groups {
   static async checkAdmin(client: any, groupId: string): Promise<any> {
     const me = await client.getMe();
 
-    let group = await Groups.checkGroupType(client, groupId)
+    let group = await Groups.checkGroupType(client, groupId);
 
     let result;
-      if (group.className === "Channel" && group.megagroup) {
-        result = await client.invoke(
-          new Api.channels.GetParticipants({
-            channel: groupId,
-            filter: new Api.ChannelParticipantsAdmins(),
-            limit: 200  // Adminlar uchun cheklov
-          })
-        )
-        let users = result.users
+    if (group.className === "Channel" && group.megagroup) {
+      result = await client.invoke(
+        new Api.channels.GetParticipants({
+          channel: groupId,
+          filter: new Api.ChannelParticipantsAdmins(),
+          limit: 200, // Adminlar uchun cheklov
+        })
+      );
+      let users = result.users;
 
-        return users.some((el: any) => el.id?.value === me.id?.value);
-      } else if (group.className === "Chat") {
-        result = await client.getParticipants(groupId);
-        return result.some(
-          (el: any) => el.id?.value === me.id?.value && (el.participant?.className === "ChatParticipantAdmin" || el.participant?.className === "ChatParticipantCreator")
-        );
-      }
-
-
+      return users.some((el: any) => el.id?.value === me.id?.value);
+    } else if (group.className === "Chat") {
+      result = await client.getParticipants(groupId);
+      return result.some(
+        (el: any) =>
+          el.id?.value === me.id?.value &&
+          (el.participant?.className === "ChatParticipantAdmin" ||
+            el.participant?.className === "ChatParticipantCreator")
+      );
+    }
   }
 
   static async GetGroups(
@@ -234,9 +235,9 @@ export class Groups {
 
       const { groupId } = req.body;
 
-      let group = await Groups.checkGroupType(client, groupId)
+      let group = await Groups.checkGroupType(client, groupId);
 
-      await Messages.SendDinamicMessage(req, res, next, group, null, false)
+      await Messages.SendDinamicMessage(req, res, next, group, null, false);
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
@@ -555,7 +556,7 @@ export class Groups {
 
       const { groupId, requestNeeded, expireDate, title } = req.body;
 
-     let group = await Groups.checkGroupType(client, String(groupId));
+      let group = await Groups.checkGroupType(client, String(groupId));
 
       const result = await client.invoke(
         new Api.messages.ExportChatInvite({
@@ -563,12 +564,12 @@ export class Groups {
           legacyRevokePermanent: true,
           requestNeeded,
           expireDate,
-          title
+          title,
         })
       );
       res.status(200).json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
@@ -775,7 +776,7 @@ export class Groups {
       const result = await client.invoke(
         new Api.messages.EditChatAbout({
           peer: group,
-          about
+          about,
         })
       );
 
@@ -801,7 +802,7 @@ export class Groups {
       await client.connect();
 
       const { groupId } = req.body;
-      const file = req.file as  Express.Multer.File | undefined;
+      const file = req.file as Express.Multer.File | undefined;
 
       let group = await Groups.checkGroupType(client, groupId);
       let isAdmin = await Groups.checkAdmin(client, groupId);
@@ -819,7 +820,7 @@ export class Groups {
           success: false,
           message: "File mavjud emas",
         });
-        return
+        return;
       }
 
       const filePath = path.join(process.cwd(), "uploads", file.fieldname);
@@ -835,14 +836,14 @@ export class Groups {
         result = await client.invoke(
           new Api.channels.EditPhoto({
             channel: group,
-            photo: inputFile
+            photo: inputFile,
           })
         );
       } else {
         result = await client.invoke(
           new Api.messages.EditChatPhoto({
             chatId: groupId,
-            photo: inputFile
+            photo: inputFile,
           })
         );
       }
@@ -853,488 +854,807 @@ export class Groups {
         data: result,
       });
 
-      fs.unlink(filePath, (err) => {})
+      fs.unlink(filePath, (err) => {});
     } catch (error: any) {
       next(new ErrorHandler(error.message, error.status));
     }
   }
 
-    //  Update Chat Photo
-    static async UpdateChatAdmin(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
+  //  Update Chat Photo
+  static async UpdateChatAdmin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
 
-        const { groupId, userId, isAdmin, adminRights } = req.body;
+      const { groupId, userId, isAdmin, adminRights } = req.body;
 
-        let group = await Groups.checkGroupType(client, groupId);
+      let group = await Groups.checkGroupType(client, groupId);
 
-        let result;
-        if (group.megagroup && group.className === "Channel") {
-          result = await client.invoke(
-            new Api.channels.EditAdmin({
-              channel: group,
-              userId,
-              adminRights: new Api.ChatAdminRights({
-                ...adminRights
-              }),
-              rank: adminRights.adminName,
-            })
-          );
-        } else {
-          result = await client.invoke(
-            new Api.messages.EditChatAdmin({
-              chatId: groupId,
-              userId,
-              isAdmin: isAdmin,
-            })
-          );
-        }
-
-        res.status(200).json({
-          success: true,
-          message: "Admin ma'lumotlari saqlandi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async ClearAllDrafts(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        const result = await client.invoke(new Api.messages.ClearAllDrafts());
-
-        res.status(200).json({
-          success: true,
-          message: "Qoralamalar tozalandi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async ClearRecentStickers(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        const result = await client.invoke(
-          new Api.messages.ClearRecentStickers({
-            attached: true,
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Stickerlar tozalandi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async DeleteExportedChatInvite(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId, link } = req.body
-        let group = await Groups.checkGroupType(client, groupId)
-
-        const result = await client.invoke(
-          new Api.messages.DeleteExportedChatInvite({
-            peer: group,
-            link: link,
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Taklif havolasi o'chirildi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-
-    static async DeletePhoneCallHistory(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { revoke } = req.body
-
-        const result = await client.invoke(
-          new Api.messages.DeletePhoneCallHistory({
-            revoke
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Qo'ng",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async GetScheduledMessages(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId } = req.query
-
-        let group = await Groups.checkGroupType(client, String(groupId))
-
-        const result = await client.invoke(
-          new Api.messages.GetScheduledMessages({
-            peer: group,
-            id: []
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Rejalashtirilib, vaqti tugab yuborilgan xabarlar",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async GetScheduledHistory(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId } = req.query
-
-        let group = await Groups.checkGroupType(client, String(groupId))
-
-        const result = await client.invoke(
-          new Api.messages.GetScheduledHistory({
-            peer: group
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Hozir rejada turgan xabarlar",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async DeleteScheduledMessages(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId, messageIds } = req.body
-
-        let group = await Groups.checkGroupType(client, groupId)
-
-        const result = await client.invoke(
-          new Api.messages.DeleteScheduledMessages({
-            peer: group,
-            id: messageIds,
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Rejalashtirilgan xabarlar o'chirildi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async EditChatDefaultBannedRights(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId, bannedRights } = req.body
-
-        let group = await Groups.checkGroupType(client, groupId)
-
-        const result = await client.invoke(
-          new Api.messages.EditChatDefaultBannedRights({
-            peer: group,
-            bannedRights: new Api.ChatBannedRights({
-              ...bannedRights
+      let result;
+      if (group.megagroup && group.className === "Channel") {
+        result = await client.invoke(
+          new Api.channels.EditAdmin({
+            channel: group,
+            userId,
+            adminRights: new Api.ChatAdminRights({
+              ...adminRights,
             }),
+            rank: adminRights.adminName,
           })
         );
-
-        res.status(200).json({
-          success: true,
-          message: "Foydalanuvchilar uchun ruxsatlar belgilandi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async EditExportedChatInvite(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId, link, expireDate, requestNeeded, title } = req.body
-
-        let group = await Groups.checkGroupType(client, groupId)
-
-        const result = await client.invoke(
-          new Api.messages.EditExportedChatInvite({
-            peer: group,
-            link,
-            expireDate,
-            requestNeeded,
-            title
+      } else {
+        result = await client.invoke(
+          new Api.messages.EditChatAdmin({
+            chatId: groupId,
+            userId,
+            isAdmin: isAdmin,
           })
         );
-
-        res.status(200).json({
-          success: true,
-          message: "Taklif havolasi yangilandi",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
       }
+
+      res.status(200).json({
+        success: true,
+        message: "Admin ma'lumotlari saqlandi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
     }
+  }
 
-    static async GetAdminsWithInvites(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
+  static async ClearAllDrafts(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(new Api.messages.ClearAllDrafts());
+
+      res.status(200).json({
+        success: true,
+        message: "Qoralamalar tozalandi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async ClearRecentStickers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(
+        new Api.messages.ClearRecentStickers({
+          attached: true,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Stickerlar tozalandi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async DeleteExportedChatInvite(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, link } = req.body;
+      let group = await Groups.checkGroupType(client, groupId);
+
+      const result = await client.invoke(
+        new Api.messages.DeleteExportedChatInvite({
+          peer: group,
+          link: link,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Taklif havolasi o'chirildi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async DeletePhoneCallHistory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { revoke } = req.body;
+
+      const result = await client.invoke(
+        new Api.messages.DeletePhoneCallHistory({
+          revoke,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Qo'ng",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetScheduledMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId } = req.query;
+
+      let group = await Groups.checkGroupType(client, String(groupId));
+
+      const result = await client.invoke(
+        new Api.messages.GetScheduledMessages({
+          peer: group,
+          id: [],
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Rejalashtirilib, vaqti tugab yuborilgan xabarlar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetScheduledHistory(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId } = req.query;
+
+      let group = await Groups.checkGroupType(client, String(groupId));
+
+      const result = await client.invoke(
+        new Api.messages.GetScheduledHistory({
+          peer: group,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Hozir rejada turgan xabarlar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async DeleteScheduledMessages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, messageIds } = req.body;
+
+      let group = await Groups.checkGroupType(client, groupId);
+
+      const result = await client.invoke(
+        new Api.messages.DeleteScheduledMessages({
+          peer: group,
+          id: messageIds,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Rejalashtirilgan xabarlar o'chirildi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async EditChatDefaultBannedRights(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, bannedRights } = req.body;
+
+      let group = await Groups.checkGroupType(client, groupId);
+
+      const result = await client.invoke(
+        new Api.messages.EditChatDefaultBannedRights({
+          peer: group,
+          bannedRights: new Api.ChatBannedRights({
+            ...bannedRights,
+          }),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Foydalanuvchilar uchun ruxsatlar belgilandi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async EditExportedChatInvite(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, link, expireDate, requestNeeded, title } = req.body;
+
+      let group = await Groups.checkGroupType(client, groupId);
+
+      const result = await client.invoke(
+        new Api.messages.EditExportedChatInvite({
+          peer: group,
+          link,
+          expireDate,
+          requestNeeded,
+          title,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Taklif havolasi yangilandi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetAdminsWithInvites(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId } = req.query;
+      let group = await Groups.checkGroupType(client, String(groupId));
+
+      const result = await client.invoke(
+        new Api.messages.GetAdminsWithInvites({
+          peer: group,
+        })
+      );
+      res.status(200).json({
+        success: true,
+        message: "Admin yaratgan taklif havolalari haqida ma'lumot",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetAllDrafts(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(new Api.messages.GetAllDrafts());
+      res.status(200).json({
+        success: true,
+        message: "Barcha qoralamalar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetAllStickers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(
+        new Api.messages.GetAllStickers({
+          hash: bigInt(-Math.floor(Math.random() * 1e18)),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Barcha o'rnatilgan stickerlar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetArchivedStickers(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { offsetId, limit } = req.query;
+
+      const result = await client.invoke(
+        new Api.messages.GetArchivedStickers({
+          offsetId: bigInt(String(offsetId)),
+          limit: Number(limit),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Barcha archive stickerlar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetAvailableReactions(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const result = await client.invoke(
+        new Api.messages.GetAvailableReactions({
+          hash: 0,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Mavjud reaksiyalar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetChatInviteImporters(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, offset, limit, link, requested } = req.query;
+
+      let group = await Groups.checkGroupType(client, String(groupId));
+
+      const result = await client.invoke(
+        new Api.messages.GetChatInviteImporters({
+          peer: group,
+          offsetDate: Number(offset),
+          limit: Number(limit),
+          q: "",
+          offsetUser: new Api.InputPeerSelf(),
+          requested: Boolean(requested),
+          link: String(link),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Link orqali kirganlar haqida ma'lumot",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetForumTopics(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId } = req.query;
+
+      let group = await Groups.checkGroupType(client, String(groupId));
+
+      const result = await client.invoke(
+        new Api.channels.GetForumTopics({
+          channel: group,
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Topiclar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async CreateForumTopic(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, title } = req.body;
+
+      let group = await Groups.checkGroupType(client, String(groupId));
+
       try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        let { groupId } = req.query
-        let group = await Groups.checkGroupType(client, String(groupId))
-
-        const result = await client.invoke(
-          new Api.messages.GetAdminsWithInvites({
-            peer: group,
+        await client.invoke(
+          new Api.channels.ToggleForum({
+            channel: group,
+            enabled: true,
           })
         );
-        res.status(200).json({
-          success: true,
-          message: "Admin yaratgan taklif havolalari haqida ma'lumot",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
+      } catch (err) {}
 
-    static async GetAllDrafts(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
+      const result = await client.invoke(
+        new Api.channels.CreateForumTopic({
+          channel: group,
+          title,
+        })
+      );
 
-        const result = await client.invoke(new Api.messages.GetAllDrafts());
-        res.status(200).json({
-          success: true,
-          message: "Barcha qoralamalar",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
-    }
-
-    static async GetAllStickers(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
-
-        const result = await client.invoke(
-          new Api.messages.GetAllStickers({
-            hash: bigInt(-Math.floor(Math.random() * 1e18))
-          })
+      res.status(200).json({
+        success: true,
+        message: "Topic yaratildi",
+        data: result,
+      });
+    } catch (error: any) {
+      if (error.messages.includes("CHAT_DISCUSSION_UNALLOWED")) {
+        next(
+          new ErrorHandler(
+            "Guruh biror kanal muhokamasiga qo'shilgan. Bu mumkin emas",
+            400
+          )
         );
-
-        res.status(200).json({
-          success: true,
-          message: "Barcha o'rnatilgan stickerlar",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
+        return;
       }
+      next(new ErrorHandler(error.message, error.status));
     }
+  }
 
-    static async GetArchivedStickers(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
+  static async SetTyping(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
 
-        let { offsetId, limit } = req.query
+      let { chatId } = req.body;
 
-        const result = await client.invoke(
-          new Api.messages.GetArchivedStickers({
-            offsetId: bigInt(String(offsetId)),
-            limit: Number(limit),
-          })
-        );
+      let chat = await Messages.getPeer(client, String(chatId));
 
-        res.status(200).json({
-          success: true,
-          message: "Barcha archive stickerlar",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
+      const result = await client.invoke(
+        new Api.messages.SetTyping({
+          peer: chat,
+          action: new Api.SendMessageTypingAction(),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Typing hodisasi o'rnatildi",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
     }
+  }
 
-    static async GetAvailableReactions(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
+  static async GetOnlines(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
 
-        const result = await client.invoke(
-          new Api.messages.GetAvailableReactions({
-            hash: 0,
-          })
-        );
+      let { groupId } = req.query;
+      let chat = await Messages.getPeer(client, String(groupId));
+      const result = await client.invoke(
+        new Api.messages.GetOnlines({
+          peer: chat,
+        })
+      );
 
-        res.status(200).json({
-          success: true,
-          message: "Mavjud reaksiyalar",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
+      res.status(200).json({
+        success: true,
+        message: "Onlinelar",
+        data: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
     }
+  }
 
-    static async GetChatInviteImporters(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> {
-      try {
-        const sessionString = req.headers.string_session as string;
-        const client = tgClient(sessionString);
-        await client.connect();
+  static async UpdateNotificationSettingsGroup(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
 
-        let { groupId, offset, limit, link, requested } = req.query
-
-        let group = await Groups.checkGroupType(client, String(groupId))
-
-        const result = await client.invoke(
-          new Api.messages.GetChatInviteImporters({
-            peer: group,
-            offsetDate: Number(offset),
-            limit: Number(limit),
-            q:"",
-            offsetUser: new Api.InputPeerSelf(),
-            requested: Boolean(requested),
-            link: String(link),
-          })
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Link orqali kirganlar haqida ma'lumot",
-          data: result,
-        });
-      } catch (error: any) {
-        next(new ErrorHandler(error.message, error.status));
-      }
+      let { groupId } = req.body;
+      let group = await Messages.getPeer(client, groupId);
+      await Messages.UpdateNotificationSettings(req, res, next, group);
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
     }
+  }
+
+  static async GetPollResults(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { chatId, pollId } = req.query;
+      let peer = await Messages.getPeer(client, chatId);
+
+      // Poll natijalarini olish
+      const result = await client.invoke(
+        new Api.messages.GetPollResults({
+          peer,
+          msgId: Number(pollId),
+        })
+      );
+
+      res.json({
+        success: true,
+        message: "So'rovnoma natijalari",
+        data: result,
+      });
+    } catch (error: any) {
+      console.log(error);
+
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async SendPollToGroup(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const {
+        chatId,
+        question,
+        options,
+        isAnonymous = true,
+        multipleChoice = false,
+        isQuiz = false,
+        correctOptionId = null
+      } = req.body;
+      let peer = await Messages.getPeer(client, chatId);
+
+      // PollAnswer arrayini tayyorlaymiz
+      const answers = options.map((option: string, index: number) => new Api.PollAnswer({
+        text: new Api.TextWithEntities({ text: option, entities: [] }),
+        option: Buffer.from(index.toString()),
+      }));
+
+      // `question`ni TextWithEntities formatiga o'tkazish
+      const formattedQuestion = new Api.TextWithEntities({
+        text: question,
+        entities: [],
+      });
+
+      // Send poll using SendMedia
+      const result = await client.invoke(
+        new Api.messages.SendMedia({
+          peer,
+          media: new Api.InputMediaPoll({
+            poll: new Api.Poll({
+              id: bigInt(Date.now()),
+              question: formattedQuestion,
+              answers: answers,
+              publicVoters: !isAnonymous,
+              multipleChoice: multipleChoice,
+              quiz: isQuiz,
+            }),
+            correctAnswers: isQuiz && correctOptionId !== null ? [Buffer.from(correctOptionId.toString())] : [],
+          }),
+          message: question,
+        })
+      );
+
+      res.json({
+        success: true,
+        poll: result,
+      });
+    } catch (error: any) {
+      console.log(error);
+
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async VoteInPoll(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { chatId, pollId, optionIndexes } = req.body;
+      let peer = await Messages.getPeer(client, chatId);
+
+      // Ovoz berish uchun PollAnswerVoter arrayini tayyorlaymiz
+      const votes = optionIndexes.map((index: number) => Buffer.from(index.toString()));
+
+      // Ovoz berish uchun invoke qilamiz
+      const result = await client.invoke(
+        new Api.messages.SendVote({
+          peer,
+          msgId: Number(pollId),
+          options: votes,
+        })
+      );
+
+
+      res.json({
+        success: true,
+        vote: result,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
+  static async GetMessageReplies(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      const { chatId, messageId } = req.query;
+
+      let peer = await Messages.getPeer(client, String(chatId));
+
+      // Xabarga reply qilingan xabarlarni olish
+      let result = await client.invoke(
+        new Api.messages.GetReplies({
+          peer,
+          msgId: Number(messageId),
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Reply qilingan xabarlar",
+        data: result.messages,
+      });
+    } catch (error: any) {
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
 }
