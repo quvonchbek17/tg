@@ -1417,6 +1417,77 @@ export class Groups {
     }
   }
 
+  static async UpdateForumTopic(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const sessionString = req.headers.string_session as string;
+      const client = tgClient(sessionString);
+      await client.connect();
+
+      let { groupId, topicId, title } = req.body;
+
+      // Guruh turini tekshirish
+      let group = await Groups.checkGroupType(client, String(groupId));
+
+      // Avval forum yoqilganligini tekshirish
+      let chatFull = await client.invoke(
+        new Api.channels.GetFullChannel({
+          channel: group,
+        })
+      );
+
+      // Forum yoqilganligini tekshirish uchun 'flags' maydonini bit-wise tekshirish
+      const isForumEnabled = (chatFull.fullChat.flags & 1 << 1) !== 0;
+
+      if (!isForumEnabled) {
+        // Agar forum yoqilmagan bo'lsa, yoqish
+        await client.invoke(
+          new Api.channels.ToggleForum({
+            channel: group,
+            enabled: true,
+          })
+        );
+      }
+
+      const result = await client.invoke(
+        new Api.channels.EditForumTopic({
+          channel: group,
+          topicId,
+          title
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Topic yangilandi",
+        data: result,
+      });
+    } catch (error: any) {
+      if (error.message?.includes("CHANNEL_FORUM_MISSING")) {
+        next(
+          new ErrorHandler(
+            "Guruhda forum yoqilmagan yoki mavjud emas",
+            400
+          )
+        );
+        return;
+      }
+      if (error.message?.includes("CHAT_DISCUSSION_UNALLOWED")) {
+        next(
+          new ErrorHandler(
+            "Guruh biror kanal muhokamasiga qo'shilgan. Bu mumkin emas",
+            400
+          )
+        );
+        return;
+      }
+      next(new ErrorHandler(error.message, error.status));
+    }
+  }
+
   static async SetTyping(
     req: Request,
     res: Response,

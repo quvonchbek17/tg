@@ -1,5 +1,5 @@
 import { query, Router } from "express";
-import { validate, updateGroupDto, createGroupDto, deleteGroupDto, blockUserDto, getGroupInfoDto, getGroupMembersDto, getGroupMessagesDto, pinMessageGroupDto, getGroupInviteLink, checkGroupInviteLinkDto, deleteGroupHistoryDto, deleteGroupMessagesDto, deleteMemberMessagesDto, updateGroupAboutDto, updateGroupPhotoDto, updateGroupAdminDto, deleteExportedChatInviteDto, sendMessageToGroupDto, getScheduledMessagesDto, getScheduledHistoryDto, deleteScheduledMessagesDto, editChatDefaultBannedRights, editExportedChatInviteDto, getAdminWithInvitesDto, getArchiveStickersDto, getChatInviteImportersDto, createForumTopicDto, getForumTopics, setTypingDto, getGroupOnlines, updateNotificationSettingsGroupDto, getGroupPollResultsDto, sendPollToGroupDto, voiteInPollDto } from "@middlewares"
+import { validate, updateGroupDto, createGroupDto, deleteGroupDto, blockUserDto, getGroupInfoDto, getGroupMembersDto, getGroupMessagesDto, pinMessageGroupDto, getGroupInviteLink, checkGroupInviteLinkDto, deleteGroupHistoryDto, deleteGroupMessagesDto, deleteMemberMessagesDto, updateGroupAboutDto, updateGroupPhotoDto, updateGroupAdminDto, deleteExportedChatInviteDto, sendMessageToGroupDto, getScheduledMessagesDto, getScheduledHistoryDto, deleteScheduledMessagesDto, editChatDefaultBannedRights, editExportedChatInviteDto, getAdminWithInvitesDto, getArchiveStickersDto, getChatInviteImportersDto, createForumTopicDto, getForumTopics, setTypingDto, getGroupOnlines, updateNotificationSettingsGroupDto, getGroupPollResultsDto, sendPollToGroupDto, voiteInPollDto, updateForumTopicDto } from "@middlewares"
 import { Groups } from "./groups"
 import { upload } from "@config";
 
@@ -44,6 +44,7 @@ GroupRouter
     .put("/update-about", validate(updateGroupAboutDto), Groups.UpdateChatAbout)
     .put("/update-photo", validate(updateGroupPhotoDto), upload.single("file"),Groups.UpdateChatPhoto)
     .put("/update-admin", validate(updateGroupAdminDto),Groups.UpdateChatAdmin)
+    .put("/update-topic", validate(updateForumTopicDto),Groups.UpdateForumTopic)
     .put("/default-banned-rights", validate(editChatDefaultBannedRights),Groups.EditChatDefaultBannedRights)
     .put("/exported-chat-invite", validate(editExportedChatInviteDto),Groups.EditExportedChatInvite)
     .put("/notification-settings", validate(updateNotificationSettingsGroupDto),Groups.UpdateNotificationSettingsGroup)

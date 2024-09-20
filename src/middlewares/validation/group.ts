@@ -68,6 +68,12 @@ export const createForumTopicDto = Joi.object().keys({
   title: Joi.string().required(),
 });
 
+export const updateForumTopicDto = Joi.object().keys({
+  groupId: Joi.string().required(),
+  topicId: Joi.number().required(),
+  title: Joi.string().required(),
+});
+
 export const setTypingDto = Joi.object().keys({
   chatId: Joi.string().required()
 });
@@ -223,5 +229,3 @@ export const voiteInPollDto = Joi.object().keys({
   pollId: Joi.number().required(),
   optionIndexes: Joi.array().items(Joi.number().required()).required()
 });
-
-
